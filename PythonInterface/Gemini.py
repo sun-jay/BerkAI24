@@ -97,15 +97,15 @@ async def gemini_codegen_handler(ctx: Context, sender: str, msg: GeminiContext):
 
     def vision_to_kinematics(vision_coords):
         # Check and print the shape of the affine matrix
-        print("Shape of affine_matrix:", affine_matrix.shape)
+        # print("Shape of affine_matrix:", affine_matrix.shape)
 
         # Convert the vision coordinates to a numpy array and ensure correct dimensions
         vision_coords_array = np.array([vision_coords], dtype=np.float32).reshape(1, 1, 2)
-        print("Shape of vision_coords_array:", vision_coords_array.shape)
+        # print("Shape of vision_coords_array:", vision_coords_array.shape)
 
         # Apply the affine transformation
         transformed_coords = cv2.transform(vision_coords_array, affine_matrix)
-        print("Shape of transformed_coords:", transformed_coords.shape)
+        # print("Shape of transformed_coords:", transformed_coords.shape)
 
         # Return the first element of the transformed coordinates
         return transformed_coords[0][0] 

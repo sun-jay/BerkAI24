@@ -51,6 +51,10 @@ class Transcriber():
 
         self.current_command = None
 
+    def transcribe_file(self, audio_file):
+        result = self.pipe(audio_file)
+        return result["text"]
+
     def record(self, ind, p, stream, seconds, silent_seconds = 0.5):
         frames = []
         # Calculating the number of frames for the minimum recording time and silence time

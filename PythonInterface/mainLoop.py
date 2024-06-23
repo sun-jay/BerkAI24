@@ -61,11 +61,15 @@ def llm_exec(prompt, image):
     # wite exec code here
 
     generated_code = llm.call_gpt(full_prompt, annotated_image)
+    # coord mapping
+    # (0,15) - (593,621)
+    # (10,20) - (1016,433)
+    # (0,25) - (622,234)
 
 
     def create_affine_matrix():
-        vision_coords = np.array([[637, 221], [1048, 413], [648, 619]], dtype=np.float32)
-        kinematics_coords = np.array([[0, 25], [10, 20], [0, 15]], dtype=np.float32)
+        vision_coords = np.array([[593, 621], [1016, 433], [622, 234]], dtype=np.float32)
+        kinematics_coords = np.array([[0, 15], [10, 20], [0, 25]], dtype=np.float32)
         return cv2.getAffineTransform(vision_coords, kinematics_coords)
 
     affine_matrix = create_affine_matrix()
@@ -150,26 +154,79 @@ manip.connect()
 manip.send_signal(000,118,127,0)
 time.sleep(1)
 
-transcriber = Transcriber(constant_print=False, verbose=False)
-transcriber.start()
+transcriber = Transcriber(constant_print=True, verbose=True)
+# transcriber.start()
 print("Transcriber started")
 
 prev = transcriber.current_command
 
+# while True:
+#     time.sleep(0.1)
+#     if transcriber.current_command == prev:
+#         continue
+
+#     print("New command detected: ", transcriber.current_command)
+
+#     prev = transcriber.current_command
+
+#     prompt = transcriber.current_command
+#     img = vis.ret_annnotated_frame()
+
+#     # show img
+
+#     llm_exec(prompt, img)
+
+import pyaudio
+import wave
+import threading
+
+# Parameters
+FORMAT = pyaudio.paInt16
+CHANNELS = 1
+RATE = 44100
+CHUNK = 1024
+FILENAME = "output.wav"
+
+audio = pyaudio.PyAudio()
+
+def record_audio():
+    stream = audio.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK)
+    frames = []
+
+    while not stop_recording:
+        data = stream.read(CHUNK)
+        frames.append(data)
+
+    stream.stop_stream()
+    stream.close()
+    
+    with wave.open(FILENAME, 'wb') as wf:
+        wf.setnchannels(CHANNELS)
+        wf.setsampwidth(audio.get_sample_size(FORMAT))
+        wf.setframerate(RATE)
+        wf.writeframes(b''.join(frames))
+
 while True:
-    time.sleep(0.1)
-    if transcriber.current_command == prev:
-        continue
+    input("Press Enter to start recording...\n")
+    # Flag to stop recording
+    stop_recording = False
 
-    print("New command detected: ", transcriber.current_command)
+    # Start recording in a separate thread
+    recording_thread = threading.Thread(target=record_audio)
+    recording_thread.start()
 
-    prev = transcriber.current_command
+    # Wait for user to press Enter
+    input("Press Enter to stop recording...\n")
+    stop_recording = True
+    recording_thread.join()
 
-    prompt = transcriber.current_command
+    prompt = transcriber.transcribe_file(FILENAME)
+
     img = vis.ret_annnotated_frame()
-
-    # show img
-
+    print("Transcription:", prompt)
     llm_exec(prompt, img)
+
+audio.terminate()
+
 
     
